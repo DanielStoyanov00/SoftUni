@@ -1,2 +1,2 @@
 # SoftUni
-Tasks from fundamental modules
+My journey in SoftUni
