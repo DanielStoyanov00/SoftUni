@@ -1,0 +1,1 @@
+Passed and current tasks from SoftUni courses.
