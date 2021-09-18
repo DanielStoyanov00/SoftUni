@@ -1,18 +1,65 @@
 package com.company;
 
-import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class _02Bee {
-    private static int row;
-    private static int col;
-    private static int pollinatedFlowers;
+    public static int row, col, pollinatedFlowers = 0;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        int rowsAndCols = Integer.parseInt(reader.readLine());
 
-        int size = Integer.parseInt(scanner.nextLine());
-        char[][] field = readMatrix(size, scanner);
+        char[][] field = readMatrix(reader, rowsAndCols);
+        initialRowAndColForBee(field);
 
+        boolean outOfBounds = true;
+        String command = reader.readLine();
+        while (!command.equals("End")) {
+
+            switch (command) {
+                case "left":
+                    outOfBounds = !moveBee(row, col - 1, row, col - 2, field);
+                    break;
+                case "right":
+                    outOfBounds = !moveBee(row, col + 1, row, col + 2, field);
+                    break;
+                case "up":
+                    outOfBounds = !moveBee(row - 1, col, row - 2, col, field);
+                    break;
+                case "down":
+                    outOfBounds = !moveBee(row + 1, col, row + 2, col, field);
+                    break;
+            }
+
+
+            if (outOfBounds) {
+                System.out.println("The bee got lost!");
+                break;
+            }
+            command = reader.readLine();
+        }
+
+        String output = pollinatedFlowers >= 5
+                ? String.format("Great job, the bee manage to pollinate %d flowers!", pollinatedFlowers)
+                : String.format("The bee couldn't pollinate the flowers, she needed %d flowers more", 5 - pollinatedFlowers);
+
+        System.out.println(output);
+        printMatrix(field);
+
+
+    }
+
+    private static char[][] readMatrix(BufferedReader reader, int rowsAndCols) throws IOException {
+        char[][] matrix = new char[rowsAndCols][rowsAndCols];
+        for (int row = 0; row < rowsAndCols; row++) {
+            matrix[row] = reader.readLine().toCharArray();
+        }
+        return matrix;
+    }
+
+    private static void initialRowAndColForBee(char[][] field) {
         for (int r = 0; r < field.length; r++) {
             for (int c = 0; c < field[r].length; c++) {
                 if (field[r][c] == 'B') {
@@ -22,147 +69,44 @@ public class _02Bee {
                 }
             }
         }
-        boolean isOutOfField = false;
-        String command = scanner.nextLine();
-        while (!command.equals("End")) {
-            switch (command) {
-                case "left":
-                    if (isOutOfBounds(row, col - 1, field)) {
-                        isOutOfField = true;
-                    } else {
-                        moveBee(row, col - 1, field, command);
-                    }
-                    break;
-                case "right":
-                    if (isOutOfBounds(row, col + 1, field)) {
-                        isOutOfField = true;
-                    } else {
-                        moveBee(row, col + 1, field, command);
-                    }
-                    break;
-                case "up":
-                    if (isOutOfBounds(row - 1, col, field)) {
-                        isOutOfField = true;
-                    } else {
-                        moveBee(row - 1, col, field, command);
-                    }
-                    break;
-                case "down":
-                    if (isOutOfBounds(row + 1, col, field)) {
-                        isOutOfField = true;
-                    } else {
-                        moveBee(row + 1, col, field, command);
-                    }
-                    break;
-            }
-            if (isOutOfField) {
-                System.out.println("The bee got lost!");
-                break;
-            }
-
-            command = scanner.nextLine();
-        }
-        if (pollinatedFlowers < 5) {
-            System.out.printf("The bee couldn't pollinate the flowers, she needed %d flowers more\n", 5 - pollinatedFlowers);
-        } else {
-            System.out.printf("Great job, the bee manage to pollinate %d flowers!\n", pollinatedFlowers);
-        }
-
-        printMatrix(field);
     }
 
-    private static void moveBee(int newRow, int newCol, char[][] field, String command) {
+    private static boolean isOutOfBounds(int row, int col, char[][] field) {
+        return row < 0 || row >= field.length || col < 0 || col >= field[row].length;
+    }
+
+    private static boolean moveBee(int newRow, int newCol, int rowForBonus, int colForBonus, char[][] field) {
         if (isOutOfBounds(newRow, newCol, field)) {
             field[row][col] = '.';
-        } else {
-            char symbol = field[newRow][newCol];
-            if (symbol == 'O') {
-                field[row][col] = '.';
-                field[newRow][newCol] = '.';
-                switch (command) {
-                    case "left":
-                        int newColMinus = newCol - 1;
-                        symbol = field[newRow][newColMinus];
-                        if (symbol == 'f') {
-                            pollinatedFlowers++;
-                            field[newRow][newColMinus] = 'B';
-                        } else if (symbol == '.') {
-                            field[newRow][newColMinus] = 'B';
-                        }
-                        row = newRow;
-                        col = newColMinus;
-                        break;
-                    case "right":
-                        int newColPlus = newCol + 1;
-                        symbol = field[newRow][newColPlus];
-                        if (symbol == 'f') {
-                            pollinatedFlowers++;
-                            field[newRow][newColPlus] = 'B';
-                        } else if (symbol == '.') {
-                            field[newRow][newColPlus] = 'B';
-                        }
-                        row = newRow;
-                        col = newColPlus;
-                        break;
-                    case "up":
-                        int newRowMinus = newRow - 1;
-                        symbol = field[newRowMinus][newCol];
-                        if (symbol == 'f') {
-                            pollinatedFlowers++;
-                            field[newRowMinus][newCol] = 'B';
-                        } else if (symbol == '.') {
-                            field[newRowMinus][newCol] = 'B';
-                        }
-                        row = newRowMinus;
-                        col = newCol;
-                        break;
-                    case "down":
-                        int newRowPlus = newRow + 1;
-                        symbol = field[newRowPlus][newCol];
-                        if (symbol == 'f') {
-                            pollinatedFlowers++;
-                            field[newRowPlus][newCol] = 'B';
-                        } else if (symbol == '.') {
-                            field[newRowPlus][newCol] = 'B';
-                        }
-                        row = newRowPlus;
-                        col = newCol;
-                        break;
-                }
-            } else {
-                if (symbol == 'f') {
-                    pollinatedFlowers++;
-                    field[row][col] = '.';
-                    field[newRow][newCol] = 'B';
-                } else if (symbol == '.') {
-                    field[row][col] = '.';
-                    field[newRow][newCol] = 'B';
-                }
-                row = newRow;
-                col = newCol;
-            }
-
+            return false;
         }
-    }
 
-    private static boolean isOutOfBounds(int newRow, int newCol, char[][] field) {
-        field[row][col] = '.';
-        return newRow < 0 || newRow >= field.length || newCol < 0 || newCol >= field[newRow].length;
-    }
-
-    private static char[][] readMatrix(int size, Scanner scanner) {
-        char[][] matrix = new char[size][size];
-
-        for (int r = 0; r < size; r++) {
-            String[] line = scanner.nextLine().split("");
-            for (int c = 0; c < line.length; c++) {
-                matrix[r][c] = line[c].charAt(0);
+        char symbol = field[newRow][newCol];
+        if (symbol == '.') {
+            field[row][col] = '.';
+            field[newRow][newCol] = 'B';
+            row = newRow;
+            col = newCol;
+        } else if (symbol == 'f') {
+            field[row][col] = '.';
+            field[newRow][newCol] = 'B';
+            pollinatedFlowers++;
+            row = newRow;
+            col = newCol;
+        } else if (symbol == 'O') {
+            if (field[rowForBonus][colForBonus] == 'f'){
+                pollinatedFlowers++;
             }
+            field[row][col] = '.';
+            field[newRow][newCol] = '.';
+            field[rowForBonus][colForBonus] = 'B';
+            row = rowForBonus;
+            col = colForBonus;
         }
-        return matrix;
+        return true;
     }
 
-    private static void printMatrix(char[][] field) {
+    private static void printMatrix(char[][] field){
         for (int r = 0; r < field.length; r++) {
             for (int c = 0; c < field[r].length; c++) {
                 System.out.print(field[r][c]);
@@ -170,4 +114,8 @@ public class _02Bee {
             System.out.println();
         }
     }
+
+
 }
+
+
