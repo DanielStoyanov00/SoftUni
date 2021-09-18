@@ -1,5 +1,3 @@
-package com.company;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,22 +12,22 @@ public class _02Bee {
         char[][] field = readMatrix(reader, rowsAndCols);
         initialRowAndColForBee(field);
 
-        boolean outOfBounds = true;
+        boolean outOfBounds = false;
         String command = reader.readLine();
         while (!command.equals("End")) {
 
             switch (command) {
                 case "left":
-                    outOfBounds = !moveBee(row, col - 1, row, col - 2, field);
+                    outOfBounds = moveBee(row, col - 1, row, col - 2, field);
                     break;
                 case "right":
-                    outOfBounds = !moveBee(row, col + 1, row, col + 2, field);
+                    outOfBounds = moveBee(row, col + 1, row, col + 2, field);
                     break;
                 case "up":
-                    outOfBounds = !moveBee(row - 1, col, row - 2, col, field);
+                    outOfBounds = moveBee(row - 1, col, row - 2, col, field);
                     break;
                 case "down":
-                    outOfBounds = !moveBee(row + 1, col, row + 2, col, field);
+                    outOfBounds = moveBee(row + 1, col, row + 2, col, field);
                     break;
             }
 
@@ -78,7 +76,7 @@ public class _02Bee {
     private static boolean moveBee(int newRow, int newCol, int rowForBonus, int colForBonus, char[][] field) {
         if (isOutOfBounds(newRow, newCol, field)) {
             field[row][col] = '.';
-            return false;
+            return true;
         }
 
         char symbol = field[newRow][newCol];
@@ -103,7 +101,7 @@ public class _02Bee {
             row = rowForBonus;
             col = colForBonus;
         }
-        return true;
+        return false;
     }
 
     private static void printMatrix(char[][] field){
@@ -114,8 +112,4 @@ public class _02Bee {
             System.out.println();
         }
     }
-
-
 }
-
-
