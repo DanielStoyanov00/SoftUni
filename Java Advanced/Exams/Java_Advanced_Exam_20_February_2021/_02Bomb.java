@@ -1,18 +1,87 @@
-package com.company;
-
-import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class _02Bomb {
-    private static int row, col, bombs;
+    public static int row, col;
+    public static int neededDeactivatedBombs;
+    public static int currentBombs;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        int size = Integer.parseInt(scanner.nextLine());
-        String[] commands = scanner.nextLine().split(",");
-        char[][] field = readMatrix(size, scanner);
+        int rowsAndCols = Integer.parseInt(reader.readLine());
+        String[] commands = reader.readLine().split(",");
+        char[][] field = createMatrix(rowsAndCols, reader);
+        setRowColAndNeededBombs(field);
 
-        int numberOfNeededBombs = 0;
+        boolean isGameEnds = false;
+        for (String command : commands) {
+            switch (command) {
+                case "left":
+                    isGameEnds = move(row, col - 1, field);
+                    break;
+                case "right":
+                    isGameEnds = move(row, col + 1, field);
+                    break;
+                case "up":
+                    isGameEnds = move(row - 1, col, field);
+                    break;
+                case "down":
+                    isGameEnds = move(row + 1, col, field);
+                    break;
+            }
+
+            if (isGameEnds) {
+                String output = currentBombs == neededDeactivatedBombs
+                        ? "Congratulations! You found all bombs!"
+                        : String.format("END! %d bombs left on the field", neededDeactivatedBombs - currentBombs);
+                System.out.println(output);
+                return;
+            }
+        }
+
+        System.out.printf("%d bombs left on the field. Sapper position: (%d,%d)", neededDeactivatedBombs - currentBombs, row, col);
+
+    }
+
+    private static boolean move(int newRow, int newCol, char[][] field) {
+        if (isInBounds(newRow, newCol, field)) {
+            char symbol = field[newRow][newCol];
+            if (symbol == 'B') {
+                field[newRow][newCol] = '+';
+                row = newRow;
+                col = newCol;
+                currentBombs++;
+                System.out.println("You found a bomb!");
+                return currentBombs == neededDeactivatedBombs;
+            } else if (symbol == 'e') {
+                return true;
+            }
+                row = newRow;
+                col = newCol;
+
+        }
+        return false;
+    }
+
+    private static boolean isInBounds(int newRow, int newCol, char[][] field) {
+        return newRow >= 0 && newRow < field.length && newCol >= 0 && newCol < field[newRow].length;
+    }
+
+    private static char[][] createMatrix(int rowsAndCols, BufferedReader reader) throws IOException {
+        char[][] matrix = new char[rowsAndCols][rowsAndCols];
+        for (int r = 0; r < matrix.length; r++) {
+            String[] col = reader.readLine().split("\\s+");
+            for (int c = 0; c < col.length; c++) {
+                char symbol = col[c].charAt(0);
+                matrix[r][c] = symbol;
+            }
+        }
+        return matrix;
+    }
+
+    private static void setRowColAndNeededBombs(char[][] field) {
         for (int r = 0; r < field.length; r++) {
             for (int c = 0; c < field[r].length; c++) {
                 if (field[r][c] == 's') {
@@ -20,119 +89,9 @@ public class _02Bomb {
                     col = c;
                 }
                 if (field[r][c] == 'B') {
-                    numberOfNeededBombs++;
+                    neededDeactivatedBombs++;
                 }
             }
         }
-        boolean gameEnds = false;
-
-        for (String currentCommand : commands) {
-            boolean findBomb = false;
-            switch (currentCommand) {
-                case "left":
-                    if (!isOutOfBounds(field, row, col - 1)) {
-                        if (itsOnE(field, row, col - 1)) {
-                            gameEnds = true;
-                        } else {
-                            if (moveSapper(field, row, col - 1)) {
-                                moveSapper(field, row, col - 1);
-                                findBomb = true;
-                            }
-                            col--;
-                        }
-                    }
-                    break;
-                case "right":
-                    if (!isOutOfBounds(field, row, col + 1)) {
-                        if (itsOnE(field, row, col + 1)) {
-                            gameEnds = true;
-                        } else {
-                            if (moveSapper(field, row, col + 1)) {
-                                moveSapper(field, row, col + 1);
-                                findBomb = true;
-                            }
-                            col++;
-                        }
-                    }
-                    break;
-                case "up":
-                    if (!isOutOfBounds(field, row - 1, col)) {
-                        if (itsOnE(field, row - 1, col)) {
-                            gameEnds = true;
-                        } else {
-                            if (moveSapper(field, row - 1, col)) {
-                                moveSapper(field, row - 1, col);
-                                findBomb = true;
-                            }
-                            row--;
-                        }
-                    }
-                    break;
-                case "down":
-                    if (!isOutOfBounds(field, row + 1, col)) {
-                        if (itsOnE(field, row + 1, col)) {
-                            gameEnds = true;
-                        } else {
-                            if (moveSapper(field, row + 1, col)) {
-                                moveSapper(field, row + 1, col);
-                                findBomb = true;
-                            }
-                            row++;
-                        }
-                    }
-                    break;
-            }
-            if (findBomb) {
-                System.out.println("You found a bomb!");
-            }
-
-            if (gameEnds) {
-                System.out.printf("END! %d bombs left on the field", numberOfNeededBombs - bombs);
-                return;
-            } else if (bombs == numberOfNeededBombs) {
-                System.out.print("Congratulations! You found all bombs!");
-                return;
-            }
-
-        }
-
-        if (bombs < numberOfNeededBombs) {
-            System.out.printf("%d bombs left on the field. Sapper position: (%d,%d)", numberOfNeededBombs - bombs, row, col);
-        }
-
-    }
-
-    private static boolean moveSapper(char[][] field, int newRol, int newCol) {
-        char symbol = field[newRol][newCol];
-        if (symbol == 'B') {
-            field[newRol][newCol] = 's';
-            field[row][col] = '+';
-            bombs++;
-            return true;
-        } else if (symbol == '+') {
-            field[row][col] = '+';
-            field[newRol][newCol] = 's';
-        }
-        return false;
-    }
-
-    private static boolean itsOnE(char[][] field, int newRow, int newCol) {
-        return field[newRow][newCol] == 'e';
-    }
-
-    private static boolean isOutOfBounds(char[][] field, int newRow, int newCol) {
-        return newRow < 0 || newRow >= field.length || newCol < 0 || newCol >= field[newRow].length;
-    }
-
-    private static char[][] readMatrix(int size, Scanner scanner) {
-        char[][] matrix = new char[size][size];
-
-        for (int r = 0; r < size; r++) {
-            String[] eachRow = scanner.nextLine().split("\\s+");
-            for (int c = 0; c < eachRow.length; c++) {
-                matrix[r][c] = eachRow[c].charAt(0);
-            }
-        }
-        return matrix;
     }
 }
