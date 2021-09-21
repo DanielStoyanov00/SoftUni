@@ -1,156 +1,121 @@
-package com.company;
-
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class _02ReVolt {
-    public static int playerRow;
-    public static int playerCol;
-    public static int finishRow;
-    public static int finishCol;
+    public static int row, col;
+    public static int finishRow, finishCol;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        int n = Integer.parseInt(scanner.nextLine());
-        int commandsCount = Integer.parseInt(scanner.nextLine());
+        int matrixSize = Integer.parseInt(reader.readLine());
+        int numberOfCommands = Integer.parseInt(reader.readLine());
 
-        char[][] field = new char[n][n];
+        char[][] field = createMatrix(matrixSize, reader);
+        getInitialRowColForPlayerAndFinishRowCol(field);
 
-        for (int i = 0; i < n; i++) {
-            String line = scanner.nextLine();
-            if (line.contains("f")) {
-                playerRow = i;
-                playerCol = line.indexOf("f");
-            }
-            if (line.contains("F")) {
-                finishRow = i;
-                finishCol = line.indexOf("F");
-            }
-            field[i] = line.toCharArray();
-        }
-
-        boolean hasWon = false;
-
-        while (commandsCount-- > 0 && !hasWon) {
-            String command = scanner.nextLine();
+        boolean hasWon;
+        while (numberOfCommands-- > 0) {
+            String command = reader.readLine();
 
             switch (command) {
-                case "up":
-                    moveUp(field);
-                    break;
-                case "down":
-                    moveDown(field);
-                    break;
                 case "left":
-                    moveLeft(field);
+                    move(row, col - 1, row, col - 2, row, field.length - 1, field);
                     break;
                 case "right":
-                    moveRight(field);
+                    move(row, col + 1, row, col + 2, row, 0, field);
+                    break;
+                case "up":
+                    move(row - 1, col, row - 2, col, field.length - 1, col, field);
+                    break;
+                case "down":
+                    move(row + 1, col, row + 2, col, 0, col, field);
                     break;
             }
 
-            hasWon = playerRow == finishRow && playerCol == finishCol;
-        }
+            hasWon = row == finishRow && col == finishCol;
+            if (hasWon) {
+                System.out.println("Player won!");
+                printMatrix(field);
+                return;
+            }
 
-        if (hasWon) {
-            System.out.println("Player won!");
-        } else {
-            System.out.println("Player lost!");
         }
+        System.out.println("Player lost!");
+        printMatrix(field);
+    }
 
-        for (int r = 0; r < field.length; r++) {
-            for (int c = 0; c < field[r].length; c++) {
-                System.out.print(field[r][c]);
+    private static void printMatrix(char[][] field) {
+        for (char[] chars : field) {
+            for (char aChar : chars) {
+                System.out.print(aChar);
             }
             System.out.println();
         }
     }
 
-    private static void moveLeft(char[][] field) {
-        int prevCol = playerCol;
-        if (playerCol - 1 < 0) {
-            playerCol = field.length;
-        }
-        if (field[playerRow][playerCol - 1] != 'T') {
-            if (playerCol == field.length) {
-                prevCol = 0;
+    private static boolean isOutOfBounds(int newRow, int newCol, char[][] field) {
+        return newRow < 0 || newRow >= field.length || newCol < 0 || newCol >= field[newRow].length;
+    }
+
+    private static void move(int newRow, int newCol, int rowAfterStepOnBonus, int colAfterStepOnBonus,
+                             int rowIfItsOutOfBounds, int colIfItsOutOfBounds, char[][] field) {
+        if (isOutOfBounds(newRow, newCol, field)) {
+            char symbol = field[rowIfItsOutOfBounds][colIfItsOutOfBounds];
+            if (symbol == 'B') {
+                field[row][col] = '-';
+                field[rowAfterStepOnBonus][colAfterStepOnBonus] = 'f';
+                row = rowAfterStepOnBonus;
+                col = colAfterStepOnBonus;
+            } else if (symbol != 'T') {
+                field[row][col] = '-';
+                row = rowIfItsOutOfBounds;
+                col = colIfItsOutOfBounds;
+                field[rowIfItsOutOfBounds][colIfItsOutOfBounds] = 'f';
             }
-            field[playerRow][prevCol] = '-';
-            playerCol--;
-            if (field[playerRow][playerCol] == 'B') {
-                int beforeRecursive = playerRow, beforeRecursiveCol = playerCol;
-                moveLeft(field);
-                field[beforeRecursive][beforeRecursiveCol] = 'B';
-            }
-            field[playerRow][playerCol] = 'f';
         } else {
-            playerCol = prevCol;
+            char symbol = field[newRow][newCol];
+            if (symbol == 'B') {
+                field[row][col] = '-';
+                if (isOutOfBounds(rowAfterStepOnBonus, colAfterStepOnBonus, field)) {
+                    row = rowIfItsOutOfBounds;
+                    col = colIfItsOutOfBounds;
+                    field[rowIfItsOutOfBounds][colIfItsOutOfBounds] = 'f';
+                } else {
+                    row = rowAfterStepOnBonus;
+                    col = colAfterStepOnBonus;
+                    field[rowAfterStepOnBonus][colAfterStepOnBonus] = 'f';
+                }
+            } else if (symbol != 'T') {
+                field[row][col] = '-';
+                field[newRow][newCol] = 'f';
+                row = newRow;
+                col = newCol;
+            }
         }
     }
 
-    private static void moveUp(char[][] field) {
-        int prevRow = playerRow;
-        if (playerRow - 1 < 0) {
-            playerRow = field.length;
-        }
-        if (field[playerRow - 1][playerCol] != 'T') {
-            if (playerRow == field.length) {
-                prevRow = 0;
+    private static void getInitialRowColForPlayerAndFinishRowCol(char[][] field) {
+        for (int r = 0; r < field.length; r++) {
+            for (int c = 0; c < field[r].length; c++) {
+                if (field[r][c] == 'f') {
+                    row = r;
+                    col = c;
+                }
+                if (field[r][c] == 'F') {
+                    finishRow = r;
+                    finishCol = c;
+                }
             }
-            field[prevRow][playerCol] = '-';
-            playerRow--;
-            if (field[playerRow][playerCol] == 'B') {
-                int beforeRecursive = playerRow, beforeRecursiveCol = playerCol;
-                moveUp(field);
-                field[beforeRecursive][beforeRecursiveCol] = 'B';
-            }
-            field[playerRow][playerCol] = 'f';
-        } else {
-            playerRow = prevRow;
         }
     }
 
-    private static void moveRight(char[][] field) {
-        int prevCol = playerCol;
-        if (playerCol + 1 == field.length) {
-            playerCol = -1;
+    private static char[][] createMatrix(int matrixSize, BufferedReader reader) throws IOException {
+        char[][] matrix = new char[matrixSize][matrixSize];
+        for (int r = 0; r < matrixSize; r++) {
+            matrix[r] = reader.readLine().toCharArray();
         }
-        if (field[playerRow][playerCol + 1] != 'T') {
-            if (playerCol == -1) {
-                prevCol = field.length - 1;
-            }
-            field[playerRow][prevCol] = '-';
-            playerCol++;
-            if (field[playerRow][playerCol] == 'B') {
-                int beforeRecursive = playerRow, beforeRecursiveCol = playerCol;
-                moveRight(field);
-                field[beforeRecursive][beforeRecursiveCol] = 'B';
-            }
-            field[playerRow][playerCol] = 'f';
-        } else {
-            playerCol = prevCol;
-        }
-    }
-
-    private static void moveDown(char[][] field) {
-        int prevRow = playerRow;
-        if (playerRow + 1 == field.length) {
-            playerRow = -1;
-        }
-        if (field[playerRow + 1][playerCol] != 'T') {
-            if (playerRow == -1) {
-                prevRow = field.length - 1;
-            }
-            field[prevRow][playerCol] = '-';
-            playerRow++;
-            if (field[playerRow][playerCol] == 'B') {
-                int beforeRecursive = playerRow, beforeRecursiveCol = playerCol;
-                moveDown(field);
-                field[beforeRecursive][beforeRecursiveCol] = 'B';
-            }
-            field[playerRow][playerCol] = 'f';
-        } else {
-            playerRow = prevRow;
-        }
+        return matrix;
     }
 }
