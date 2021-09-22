@@ -1,1 +1,0 @@
-Works for all problems in judge.
